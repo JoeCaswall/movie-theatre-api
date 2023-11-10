@@ -30,14 +30,59 @@ showRouter.get("/genres/:genre", async (req, res) => {
   res.json(shows);
 });
 
-showRouter.patch("/:id/update", async (req, res) => {
-  const show = await Show.findByPk(req.params.id);
-  await show.update({ rating: req.body.rating });
-  res.json(show);
-});
+showRouter.post(
+  "/",
+  [check("title").isLength({ min: 2, max: 25 }).trim()],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.json({ error: errors.array() });
+    } else {
+      const newShow = await Show.create(req.body);
+      res.json(newShow);
+    }
+  }
+);
+
+showRouter.patch(
+  "/:id/submitrating",
+  [check("rating").not().isEmpty().trim()],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.json({ error: errors.array() });
+    } else {
+      const show = await Show.findByPk(req.params.id);
+      let currentRating = show.rating;
+      //if it isn't rated yet, make starting rating = first users rating
+      if (currentRating === null) {
+        currentRating = req.body.rating;
+      }
+      await show.update({ rating: (currentRating + req.body.rating) / 2 });
+      res.json(show);
+    }
+  }
+);
+
+showRouter.patch(
+  "/:id/available",
+  [check("available").not().isBoolean()], //availability should be a boolean
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.json({ error: errors.array() });
+    } else {
+      const show = await Show.findByPk(req.params.id);
+      await show.update({ available: req.body.available });
+      res.json(show);
+    }
+  }
+);
 
 showRouter.delete("/:id", async (req, res) => {
   await Show.destroy({ where: { id: req.params.id } });
+  const allShows = await Show.findAll();
+  res.json(allShows);
 });
 
 module.exports = { showRouter };
