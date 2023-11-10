@@ -26,7 +26,9 @@ showRouter.get("/:id/users", async (req, res) => {
 });
 
 showRouter.get("/genres/:genre", async (req, res) => {
-  const shows = await Show.findAll({ where: { genre: req.params.genre } });
+  const shows = await Show.findAll({
+    where: { genre: req.params.genre },
+  });
   res.json(shows);
 });
 
@@ -39,6 +41,7 @@ showRouter.post(
       res.json({ error: errors.array() });
     } else {
       const newShow = await Show.create(req.body);
+      newShow.genre = newShow.genre.toLowerCase().split(" ").join("-");
       res.json(newShow);
     }
   }
